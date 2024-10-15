@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  nginx:
+    build: .docker/nginx
+    container_name: "nginx"
+    restart: always
+    tty: true
+    ports:
+      - "9999:80"
+    volumes:
+      - .:/var/www
+    networks:
+      - laravel-api-network
+    depends_on:
+      - php-fpm
+
+  php-fpm:
+    build: .docker/php
+    container_name: "php-fpm"
+    environment:
+      - COMPOSER_MEMORY_LIMIT=2G
+      - ENVIRONMENT=local
+    volumes:
+      - .:/var/www
+    networks:
+      - laravel-api-network
+    user: lfcf
+
+  mysql:
+    build: .docker/mysql
+    command: --innodb-use-native-aio=0 --default-authentication-plugin=mysql_native_password
+    container_name: "mysql"
+    restart: always
+    tty: true
+    ports:
+      - "3399:3306"
+    volumes:
+      - ./.docker/mysql/dbdata:/var/lib/mysql
+      - ./.docker/mysql/scripts:/docker-entrypoint-initdb.d
+    environment:
+      MYSQL_DATABASE: laravel-api
+      MYSQL_ROOT_PASSWORD: root
+    networks:
+      - laravel-api-network
+
+networks:
+  laravel-api-network:
+    driver: bridge
